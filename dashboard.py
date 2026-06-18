@@ -10,6 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
+# GOOGLE SHEETS
 escopos = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -34,39 +35,116 @@ st.title("Painel de Relatórios")
 
 if len(dados) == 0:
 
-    st.info("Nenhum relatório encontrado.")
+    st.info(
+        "Nenhum relatório encontrado."
+    )
 
 else:
 
-    df = pd.DataFrame(dados)
+    df = pd.DataFrame(
+        dados
+    )
+
+    # FILTRO PELO LINK
+    params = st.query_params
+
+    if "data" in params:
+
+        data_link = params["data"]
+
+        df = df[
+            df["Data"]
+            .astype(str)
+            .str.replace("/", "-")
+            == data_link
+        ]
+
+        st.success(
+            f"Exibindo relatórios do dia {data_link}"
+        )
+
+        if st.button(
+            "Ver todos"
+        ):
+
+            st.query_params.clear()
+
+            st.rerun()
 
     st.metric(
-        "Total de Relatórios",
+        "Total",
         len(df)
     )
 
     st.divider()
 
-    for i in range(len(df)-1, -1, -1):
+    for i in range(
+        len(df)-1,
+        -1,
+        -1
+    ):
 
         linha = df.iloc[i]
 
+        data = str(
+            linha["Data"]
+        )
+
+        link_dia = (
+            "https://relatorio-empresa-gd2pcbuqe3mef2bowyzjtt.streamlit.app/"
+            "?data="
+            + data.replace("/", "-")
+        )
+
         with st.expander(
-            f"{linha['Data']} | {linha['Nome']}"
+
+            f"{linha['Data']} | "
+            f"{linha['Nome']}"
+
         ):
 
             st.write(
                 f"**Hora:** {linha['Hora']}"
             )
 
-            st.write(
-                f"**Atividades:**\n\n{linha['Atividades']}"
+            st.markdown(
+                "### Atividades"
             )
 
             st.write(
-                f"**Pendências:**\n\n{linha['Pendências']}"
+                linha["Atividades"]
             )
 
+            st.markdown(
+                "### Pendências"
+            )
+
+            texto = linha[
+                "Pendências"
+            ]
+
             st.write(
-                f"**Observações:**\n\n{linha['Observações']}"
+                texto
+                if texto
+                else "-"
+            )
+
+            st.markdown(
+                "### Observações"
+            )
+
+            texto = linha[
+                "Observações"
+            ]
+
+            st.write(
+                texto
+                if texto
+                else "-"
+            )
+
+            st.text_input(
+                "Link direto deste dia",
+                value=link_dia,
+                key=f"link{i}"
             )
